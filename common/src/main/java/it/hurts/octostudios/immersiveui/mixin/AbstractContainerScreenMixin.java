@@ -162,6 +162,12 @@ public abstract class AbstractContainerScreenMixin {
         CommonCode.floatingRenderSize(guiGraphics, slot, hoveredSlot, expandingProgress);
     }
 
+    // 新增：在物品渲染后，边框渲染前恢复原始变换状态
+    @Inject(method = "renderSlot", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphics;renderItemDecorations(Lnet/minecraft/client/gui/Font;Lnet/minecraft/world/item/ItemStack;IILjava/lang/String;)V", shift = At.Shift.AFTER))
+    public void restoreScaleAfterItemRender(GuiGraphics guiGraphics, Slot slot, CallbackInfo ci) {
+        CommonCode.restoreOriginalScale(guiGraphics);
+    }
+
     @Inject(method = "renderSlotHighlight", at = @At(value = "HEAD"), cancellable = true)
     private static void disableSlotHighlight(GuiGraphics guiGraphics, int x, int y, int blitOffset, @NotNull CallbackInfo ci) {
         if (!ImmersiveUI.CONFIG.isEnableVanillaSlotHighlighting()) {

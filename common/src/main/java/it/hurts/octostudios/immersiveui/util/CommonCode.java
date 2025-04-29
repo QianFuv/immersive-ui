@@ -28,6 +28,9 @@ public class CommonCode {
 //        }
     }
 
+    // 保存缩放前的状态为静态变量，以便后续恢复
+    private static ThreadLocal<Boolean> scaleApplied = new ThreadLocal<>();
+
     public static void floatingRenderSize(GuiGraphics guiGraphics, Slot slot, Slot hoveredSlot, Map<Slot, Float> expandingProgress) {
         LocalPlayer player = Minecraft.getInstance().player;
 
@@ -44,15 +47,30 @@ public class CommonCode {
         float progress = Easing.lerp(1F, ImmersiveUI.CONFIG.getHoveredItemScale(), Easing.animate(hovering ? Easing.Type.EASE_OUT : Easing.Type.EASE_IN, expandingProgress.get(slot)));
         //if (!hovering) return;
 
-
         if (hoveredSlot == slot && !ImmersiveUI.CONFIG.isEnableVanillaSlotHighlighting()) guiGraphics.fillGradient(RenderType.guiOverlay(), slot.x, slot.y, slot.x + 16, slot.y + 16, -2130706433, -2130706433, 0);
 
         if (!carried.isEmpty() && ItemStack.isSameItemSameTags(slot.getItem(), carried) && ImmersiveUI.CONFIG.isEnableMatchingItemHovering()) {
             guiGraphics.pose().translate(Mth.sin(Minecraft.getInstance().player.tickCount*0.215f + Objects.hash(slot.x, slot.y))*ImmersiveUI.CONFIG.getMatchingItemHoverAmplitude(), Mth.cos(Minecraft.getInstance().player.tickCount*0.13f + Objects.hash(slot.x, slot.y))*ImmersiveUI.CONFIG.getMatchingItemHoverAmplitude(), 0);
         }
 
+        // 保存当前的变换状态
+        guiGraphics.pose().pushPose();
+
+        // 应用缩放变换
         guiGraphics.pose().translate(slot.x + 8, slot.y + 8, 0);
         guiGraphics.pose().scale(progress, progress, 1f);
         guiGraphics.pose().translate(-slot.x - 8, -slot.y - 8, 0);
+
+        // 设置标记，表示已应用缩放
+        scaleApplied.set(true);
+    }
+
+    // 添加新方法，用于物品渲染后恢复原始变换状态
+    public static void restoreOriginalScale(GuiGraphics guiGraphics) {
+        if (Boolean.TRUE.equals(scaleApplied.get())) {
+            // 恢复之前保存的变换状态
+            guiGraphics.pose().popPose();
+            scaleApplied.set(false);
+        }
     }
 }
